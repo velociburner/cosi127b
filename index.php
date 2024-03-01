@@ -26,6 +26,14 @@
             <div class="input-group mb-3">
                     <button class="btn btn-outline-secondary" type="submit" name="actors" id="button-addon2">View all Actors</button>
             </div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Enter email" name="uemail" id="uemail">
+                <input type="text" class="form-control" placeholder="Enter motion picture id" name="mpid" id="mpid">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="submit" name="like" id="button-addon2">Like</button>
+                </div>
+            </div>
+
         </form>
     </div>
 
@@ -92,6 +100,16 @@
                 foreach(new Movies(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
                     echo $v;
                 }
+            }
+
+            // like movie
+            // doesn't validate if user exists or anything fancy
+            if(isset($_POST["like"]) and $_POST["uemail"] !== "" and $_POST["mpid"] !== "")
+            {
+                $uemail = $_POST["uemail"];
+                $mpid = $_POST["mpid"];
+                $like = $conn->prepare("INSERT INTO Likes VALUES (?, ?)");
+                $like->execute([$uemail, $mpid]);
             }
 
         }
