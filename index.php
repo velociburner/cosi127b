@@ -19,12 +19,9 @@
         <h3 style="text-align:center">Connecting Front-End to MySQL DB</h3><br>
     </div>
     <div class="container">
-        <form id="ageLimitForm" method="post" action="index.php">
+        <form id="ageLimitForm" method="post" action="movies.php">
             <div class="input-group mb-3">
-                    <button class="btn btn-outline-secondary" type="submit" name="movies" id="button-addon2">View all Movies</button>
-            </div>
-            <div class="input-group mb-3">
-                    <button class="btn btn-outline-secondary" type="submit" name="actors" id="button-addon2">View all Actors</button>
+                <button class="btn btn-outline-secondary" type="submit" name="movies" id="button-addon2">View all Movies</button>
             </div>
             <div class="input-group mb-3">
                 <input type="text" class="form-control" placeholder="Enter email" name="uemail" id="uemail">
@@ -35,169 +32,11 @@
             </div>
 
         </form>
-    </div>
-
-    <div class="container">
-        <?php
-
-        // generic table builder. It will automatically build table data rows irrespective of result
-        class Movies extends RecursiveIteratorIterator {
-            function __construct($it) {
-                parent::__construct($it, self::LEAVES_ONLY);
-            }
-
-            function current() {
-                return "<td style='text-align:center'>" . parent::current(). "</td>";
-            }
-
-            function beginChildren() {
-                echo "<tr>";
-            }
-
-            function endChildren() {
-                echo "</tr>" . "\n";
-            }
-        }
-
-        // SQL CONNECTIONS
-        $servername = "localhost";
-        $username = "root";
-        $password = "";
-        $dbname = "COSI127b";
-
-        try {
-            // We will use PDO to connect to MySQL DB. This part need not be 
-            // replicated if we are having multiple queries. 
-            // initialize connection and set attributes for errors/exceptions
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // prepare statement for executions. This part needs to change for every query
-            $stmt = $conn->prepare("SELECT id, boxoffice_collection, name, rating, production, budget FROM MotionPicture JOIN Movie ON id=mpid;");
-
-            // execute statement
-            $stmt->execute();
-
-            // set the resulting array to associative. 
-            $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
-
-            // we want to check if the submit button has been clicked (in our case, it is named Query)
-            if(isset($_POST['movies']))
-            {
-            echo "<h1>Movies</h1>";
-            // we will now create a table from PHP side 
-            echo "<table class='table table-md table-bordered'>";
-            echo "<thead class='thead-dark' style='text-align: center'>";
-
-            // initialize table headers
-            echo "<tr><th class='col-md-2'>id</th>
-                <th class='col-md-2'>Collection</th>
-                <th class='col-md-2'>Name</th>
-                <th class='col-md-2'>Rating</th>
-                <th class='col-md-2'>Production</th>
-                <th class='col-md-2'>Budget</th></tr></thead>";
-                // for each row that we fetched, use the iterator to build a table row on front-end
-                foreach(new Movies(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
-                    echo $v;
-                }
-            }
-
-            // like movie
-            // doesn't validate if user exists or anything fancy
-            if(isset($_POST["like"]) and $_POST["uemail"] !== "" and $_POST["mpid"] !== "")
-            {
-                $uemail = $_POST["uemail"];
-                $mpid = $_POST["mpid"];
-                $like = $conn->prepare("INSERT INTO Likes VALUES (?, ?)");
-                $like->execute([$uemail, $mpid]);
-            }
-
-        }
-        catch(PDOException $e) {
-            echo "Error: " . $e->getMessage();
-        }
-        echo "</table>";
-        // destroy our connection
-        $conn = null;
-    
-    ?>
-
-    </div>
-
-    <div class="container">
-        <?php
-
-        // generic table builder. It will automatically build table data rows irrespective of result
-        class Actors extends RecursiveIteratorIterator {
-            function __construct($it) {
-                parent::__construct($it, self::LEAVES_ONLY);
-            }
-
-            function current() {
-                return "<td style='text-align:center'>" . parent::current(). "</td>";
-            }
-
-            function beginChildren() {
-                echo "<tr>";
-            }
-
-            function endChildren() {
-                echo "</tr>" . "\n";
-            }
-        }
-
-        // SQL CONNECTIONS
-        $servername = "localhost";
-        $username = "root";
-        $password = "";
-        $dbname = "COSI127b";
-
-        try {
-            // We will use PDO to connect to MySQL DB. This part need not be 
-            // replicated if we are having multiple queries. 
-            // initialize connection and set attributes for errors/exceptions
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            // prepare statement for executions. This part needs to change for every query
-            $stmt = $conn->prepare("SELECT DISTINCT id, name, nationality, dob, gender FROM People JOIN Role ON id=mpid WHERE role_name='Actor';");
-
-            // execute statement
-            $stmt->execute();
-
-            // set the resulting array to associative. 
-            $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
-
-            // we want to check if the submit button has been clicked (in our case, it is named Query)
-            if(isset($_POST['actors']))
-            {
-            echo "<h1>Actors</h1>";
-            // we will now create a table from PHP side 
-            echo "<table class='table table-md table-bordered'>";
-            echo "<thead class='thead-dark' style='text-align: center'>";
-
-            // initialize table headers
-            echo "<tr><th class='col-md-2'>id</th>
-                <th class='col-md-2'>Name</th>
-                <th class='col-md-2'>Nationality</th>
-                <th class='col-md-2'>DOB</th>
-                <th class='col-md-2'>Gender</th></tr></thead>";
-                // for each row that we fetched, use the iterator to build a table row on front-end
-                foreach(new Actors(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
-                    echo $v;
-                }
-            }
-
-        }
-        catch(PDOException $e) {
-            echo "Error: " . $e->getMessage();
-        }
-        echo "</table>";
-        // destroy our connection
-        $conn = null;
-    
-    ?>
-
+        <form id="actorsForm" method="post" action="actors.php">
+            <div class="input-group mb-3">
+                <button class="btn btn-outline-secondary" type="submit" name="actors" id="button-addon2">View all Actors</button>
+            </div>
+        </form>
     </div>
 </body>
 </html>
