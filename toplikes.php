@@ -22,7 +22,7 @@
         <?php
 
         // generic table builder. It will automatically build table data rows irrespective of result
-        class Movies extends RecursiveIteratorIterator {
+        class TopLikes extends RecursiveIteratorIterator {
             function __construct($it) {
                 parent::__construct($it, self::LEAVES_ONLY);
             }
@@ -53,8 +53,21 @@
             $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+            $searchTerm1 = $_POST['likes'];
+            $searchTerm2 = $_POST['age'];
             // prepare statement for executions. This part needs to change for every query
-            $stmt = $conn->prepare("SELECT id, boxoffice_collection, name, rating, production, budget FROM MotionPicture JOIN Movie ON id=mpid;");
+            // Find all the movies with more than “X” (parameterized) likes by users of age less than “Y”
+            // (parameterized). List the movie names and the number of likes by those age-group users.
+            $stmt = $conn->prepare("SELECT mp.name, COUNT(l.mpid) AS lcnt FROM MotionPicture mp
+                JOIN Movie m ON mp.id=m.mpid
+                JOIN Likes l ON m.mpid=l.mpid
+                JOIN User u ON l.uemail=u.email
+                WHERE u.age<:searchTerm2
+                GROUP BY mp.name
+                HAVING lcnt>:searchTerm1;");
+
+            $stmt->bindValue(':searchTerm1', $searchTerm1);
+            $stmt->bindValue(':searchTerm2', $searchTerm2);
 
             // execute statement
             $stmt->execute();
@@ -63,37 +76,21 @@
             $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
             // we want to check if the submit button has been clicked (in our case, it is named Query)
-            if(isset($_POST['movies']))
+            if(isset($_POST['toplikes']))
             {
-            echo "<h1>Movies</h1>";
+            echo "<h1>Top liked movies by young ages</h1>";
             // we will now create a table from PHP side 
             echo "<table class='table table-md table-bordered'>";
             echo "<thead class='thead-dark' style='text-align: center'>";
 
             // initialize table headers
-            echo "<tr><th class='col-md-2'>id</th>
-                <th class='col-md-2'>Collection</th>
-                <th class='col-md-2'>Name</th>
-                <th class='col-md-2'>Rating</th>
-                <th class='col-md-2'>Production</th>
-                <th class='col-md-2'>Budget</th></tr></thead>";
+            echo "<tr><th class='col-md-2'>Movie</th>
+                <th class='col-md-2'># likes</th></tr></thead>";
                 // for each row that we fetched, use the iterator to build a table row on front-end
-                foreach(new Movies(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
+                foreach(new TopLikes(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
                     echo $v;
                 }
             }
-
-            // like movie
-            // doesn't validate if user exists or anything fancy
-            if(isset($_POST["like"]) and $_POST["email"] !== "" and $_POST["mpid"] !== "")
-            {
-                $mpid = $_POST["mpid"];
-                $uemail = $_POST["email"];
-                $like = $conn->prepare("INSERT INTO Likes VALUES (?, ?)");
-                $like->execute([$mpid, $uemail]);
-                echo "<p>Liked movie!</p>";
-            }
-
         }
         catch(PDOException $e) {
             echo "Error: " . $e->getMessage();

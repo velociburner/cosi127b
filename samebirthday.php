@@ -22,7 +22,7 @@
         <?php
 
         // generic table builder. It will automatically build table data rows irrespective of result
-        class Movies extends RecursiveIteratorIterator {
+        class SameBirthday extends RecursiveIteratorIterator {
             function __construct($it) {
                 parent::__construct($it, self::LEAVES_ONLY);
             }
@@ -54,7 +54,11 @@
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // prepare statement for executions. This part needs to change for every query
-            $stmt = $conn->prepare("SELECT id, boxoffice_collection, name, rating, production, budget FROM MotionPicture JOIN Movie ON id=mpid;");
+            // Find actors who share the same birthday. List the actor names (actor 1, actor 2) and their
+            // common birthday.
+            $stmt = $conn->prepare("SELECT p1.name AS person1, p2.name AS person2, p1.dob FROM People p1
+                JOIN People p2 ON p1.dob=p2.dob
+                WHERE p1.id < p2.id;");
 
             // execute statement
             $stmt->execute();
@@ -63,37 +67,24 @@
             $result = $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
             // we want to check if the submit button has been clicked (in our case, it is named Query)
-            if(isset($_POST['movies']))
+            // Find actors who share the same birthday. List the actor names (actor 1, actor 2) and their
+            // common birthday.
+            if(isset($_POST['samebirthday']))
             {
-            echo "<h1>Movies</h1>";
+            echo "<h1>Actors who share a birthday</h1>";
             // we will now create a table from PHP side 
             echo "<table class='table table-md table-bordered'>";
             echo "<thead class='thead-dark' style='text-align: center'>";
 
             // initialize table headers
-            echo "<tr><th class='col-md-2'>id</th>
-                <th class='col-md-2'>Collection</th>
-                <th class='col-md-2'>Name</th>
-                <th class='col-md-2'>Rating</th>
-                <th class='col-md-2'>Production</th>
-                <th class='col-md-2'>Budget</th></tr></thead>";
+            echo "<tr><th class='col-md-2'>Actor 1</th>
+                <th class='col-md-2'>Actor 2</th>
+                <th class='col-md-2'>Birthday</th></tr></thead>";
                 // for each row that we fetched, use the iterator to build a table row on front-end
-                foreach(new Movies(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
+                foreach(new SameBirthday(new RecursiveArrayIterator($stmt->fetchAll())) as $k=>$v) {
                     echo $v;
                 }
             }
-
-            // like movie
-            // doesn't validate if user exists or anything fancy
-            if(isset($_POST["like"]) and $_POST["email"] !== "" and $_POST["mpid"] !== "")
-            {
-                $mpid = $_POST["mpid"];
-                $uemail = $_POST["email"];
-                $like = $conn->prepare("INSERT INTO Likes VALUES (?, ?)");
-                $like->execute([$mpid, $uemail]);
-                echo "<p>Liked movie!</p>";
-            }
-
         }
         catch(PDOException $e) {
             echo "Error: " . $e->getMessage();
